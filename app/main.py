@@ -16,7 +16,7 @@ app = FastAPI(
     description="JWT authentication API — register, login, refresh tokens and protected routes",
     version="1.0.0",
     contact={
-        "name": "José Ángel Ceballos",
+        "name": "Euchelu",
         "url": "https://github.com/Euchelu",
     },
 )
