@@ -1,4 +1,7 @@
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, Request, status
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
 from .database import engine, get_db
@@ -17,6 +20,12 @@ app = FastAPI(
         "url": "https://github.com/Euchelu",
     },
 )
+
+# Login is the one endpoint worth throttling — it's the only place a brute-force
+# password guess is cheap for an attacker and expensive for us.
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 @app.get("/", tags=["health"])
@@ -38,8 +47,9 @@ def register(data: schemas.UserRegister, db: Session = Depends(get_db)):
 
 
 @app.post("/auth/login", response_model=schemas.TokenResponse, tags=["auth"])
-def login(data: schemas.UserLogin, db: Session = Depends(get_db)):
-    """Authenticates a user and returns access + refresh tokens."""
+@limiter.limit("5/minute")
+def login(request: Request, data: schemas.UserLogin, db: Session = Depends(get_db)):
+    """Authenticates a user and returns access + refresh tokens. Limited to 5 attempts/minute per IP."""
     user = crud.get_user_by_email(db, data.email)
     if not user or not verify_password(data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")

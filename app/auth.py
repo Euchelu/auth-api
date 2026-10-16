@@ -13,10 +13,20 @@ from typing import Optional
 import bcrypt
 from jose import JWTError, jwt
 
-SECRET_KEY       = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
+ENV               = os.getenv("ENV", "development")
+DEV_SECRET_KEY    = "dev-secret-key-change-in-production"
+SECRET_KEY        = os.getenv("SECRET_KEY", DEV_SECRET_KEY)
 ALGORITHM        = "HS256"
 ACCESS_TOKEN_TTL  = timedelta(minutes=30)
 REFRESH_TOKEN_TTL = timedelta(days=7)
+
+# The dev default is fine for local work, but it must never sign real tokens in
+# production — anyone who reads this file would know how to forge them.
+if ENV == "production" and SECRET_KEY == DEV_SECRET_KEY:
+    raise RuntimeError(
+        "SECRET_KEY is still the development default. Set a real SECRET_KEY "
+        "environment variable before running with ENV=production."
+    )
 
 
 # ── Password helpers ──────────────────────────────────────────────────────────

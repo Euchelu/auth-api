@@ -25,6 +25,7 @@ app.dependency_overrides[get_db] = override_get_db
 @pytest.fixture(autouse=True)
 def reset_db():
     Base.metadata.create_all(bind=engine)
+    app.state.limiter.reset()  # every test gets a fresh login rate-limit bucket
     yield
     Base.metadata.drop_all(bind=engine)
 
@@ -182,3 +183,20 @@ def test_refresh_fails_after_logout():
     })
     r = client.post("/auth/refresh", json={"refresh_token": tokens["refresh_token"]})
     assert r.status_code == 401
+
+# ── Rate limiting ────────────────────────────────────────────────────────────
+
+def test_login_rate_limited_after_five_attempts():
+    """El 6º intento de login en el mismo minuto debe recibir 429, aunque la contraseña sea correcta."""
+    client.post("/auth/register", json=VALID_USER)
+    for _ in range(5):
+        r = client.post("/auth/login", json={
+            "email": VALID_USER["email"],
+            "password": VALID_USER["password"],
+        })
+        assert r.status_code == 200
+    r = client.post("/auth/login", json={
+        "email": VALID_USER["email"],
+        "password": VALID_USER["password"],
+    })
+    assert r.status_code == 429
