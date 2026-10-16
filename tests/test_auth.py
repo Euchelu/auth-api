@@ -34,7 +34,7 @@ client = TestClient(app)
 
 VALID_USER = {
     "email": "jose@example.com",
-    "username": "euchelu",
+    "username": "testuser",
     "password": "SecurePass123",
 }
 
