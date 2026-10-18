@@ -12,7 +12,7 @@ REST API de autenticación con JWT construida con FastAPI. Implementa registro, 
 - **bcrypt** — hashing de contraseñas
 - **Pydantic v2** — validación de datos con `EmailStr`
 - **Docker + Docker Compose** — despliegue con PostgreSQL
-- **pytest + httpx** — 18 tests de integración
+- **pytest + httpx** — 22 tests de integración
 
 ## Endpoints
 
@@ -84,7 +84,7 @@ curl -X POST http://localhost:8000/auth/refresh \
 ## Tests
 
 ```
-tests/test_auth.py  18 tests
+tests/test_auth.py  19 tests
   ✓ Registro exitoso
   ✓ Email duplicado → 409
   ✓ Username duplicado → 409
@@ -102,4 +102,10 @@ tests/test_auth.py  18 tests
   ✓ Access token rechazado en /refresh → 401
   ✓ Logout exitoso
   ✓ Refresh falla tras logout → 401
+  ✓ Más de 5 intentos de login por minuto → 429
+
+tests/test_secret_key_guard.py  3 tests
+  ✓ Rechaza la SECRET_KEY por defecto en producción
+  ✓ Permite la SECRET_KEY por defecto en desarrollo
+  ✓ Permite producción con una SECRET_KEY real
 ```
